@@ -67,8 +67,7 @@ function esc(t){return t.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&
 function start(){
   name="";num={};sc=[0,0,0,0,0];i=0;
   app.innerHTML='<h1>💘 Gelecekteki Eşin Kim?</h1><p class="sub">Kullanıcı adını yaz, birkaç bilgi ver ve 7 soruyu cevapla. Geleceğin eşini ve memleketini tahmin edelim.</p>'+
-  '<div class="card"><input id="u" placeholder="@kullanıcıadı" maxlength="30" autocomplete="off"><button class="btn" id="go" disabled>Başlayalım</button></div>'+
-  '<p class="note">Eğlence amaçlıdır. Twitter/X\'ten hiçbir veri çekilmez.</p>';
+  '<div class="card"><input id="u" placeholder="@kullanıcıadı" maxlength="30" autocomplete="off"><button class="btn" id="go" disabled>Başlayalım</button></div>';
   var u=document.getElementById("u"),g=document.getElementById("go");
   u.oninput=function(){g.disabled=!u.value.replace("@","").trim()};
   u.onkeydown=function(e){if(e.key==="Enter"&&!g.disabled)g.click()};
