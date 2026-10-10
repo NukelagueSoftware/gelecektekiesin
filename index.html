@@ -32,6 +32,7 @@ button{font:inherit;cursor:pointer}
 .big{font-size:2.4rem;font-weight:800;color:var(--acc);text-align:center;margin:0}
 .c{text-align:center;color:var(--mut);margin:0 0 8px}
 .ghost{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+a.btn{display:block;text-align:center;text-decoration:none}
 .err{color:var(--acc);font-size:.85rem;margin:10px 0 0;min-height:1em}
 .note{font-size:.8rem;color:var(--mut);text-align:center;margin-top:18px}
 </style>
@@ -140,14 +141,51 @@ function result(){
   var r=compute();
   save(r,function(rr,existed){render(rr,existed)});
 }
+function wrapT(c,t,x,y,w,lh){var ws=String(t).split(" "),l="";for(var k=0;k<ws.length;k++){var tt=l?l+" "+ws[k]:ws[k];if(c.measureText(tt).width>w&&l){c.fillText(l,x,y);y+=lh;l=ws[k]}else l=tt}c.fillText(l,x,y);return y+lh}
+function makeImage(r){return new Promise(function(res){
+  var cv=document.createElement("canvas");cv.width=1080;cv.height=1350;var c=cv.getContext("2d");
+  var g=c.createLinearGradient(0,0,1080,1350);g.addColorStop(0,"#ffe3ea");g.addColorStop(1,"#fff7f3");c.fillStyle=g;c.fillRect(0,0,1080,1350);
+  c.fillStyle="#fff";c.beginPath();if(c.roundRect)c.roundRect(60,60,960,1230,40);else c.rect(60,60,960,1230);c.fill();
+  var F="system-ui,-apple-system,Segoe UI,Roboto,sans-serif";c.textAlign="center";
+  c.fillStyle="#2b1b1f";c.font="700 48px "+F;c.fillText("💘 Gelecekteki Eşin Kim?",540,150);
+  c.fillStyle="#8a6f75";c.font="400 38px "+F;c.fillText("@"+r.n+" için sonuç",540,215);
+  c.fillStyle="#e8365d";c.font="800 150px "+F;c.fillText(r.u,540,390);
+  c.fillStyle="#8a6f75";c.font="400 34px "+F;c.fillText("uyum oranı",540,440);
+  c.textAlign="left";var y=535;
+  [["Memleket",r.city],["Meslek",r.job],["Yaş",r.yas],["Boy",r.boy],["Kilo",r.kilo],["Karakter",r.huy],["İlk buluşma",r.date],["Profil",r.prof]].forEach(function(x){
+    c.fillStyle="#e8365d";c.font="700 36px "+F;c.fillText(x[0],110,y);
+    c.fillStyle="#2b1b1f";c.font="400 36px "+F;y=wrapT(c,x[1],380,y,600,46)+22;
+  });
+  cv.toBlob(function(b){res(b)},"image/png");
+})}
+function shareImg(r,txt,st){
+  st.textContent="Resim hazırlanıyor...";
+  makeImage(r).then(function(blob){
+    var f=new File([blob],"gelecek-esin.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      return navigator.share({files:[f],text:txt}).then(function(){st.textContent=""},function(e){if(e&&e.name==="AbortError"){st.textContent="";return}return saveImg(blob,txt,st)});
+    }
+    return saveImg(blob,txt,st);
+  }).catch(function(){st.textContent="Resim oluşturulamadı."});
+}
+function saveImg(blob,txt,st){
+  var link='<a href="https://twitter.com/intent/tweet?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener noreferrer" style="color:var(--acc)">X\'i aç</a>';
+  var cu=window.claude&&claude.use?claude.use("downloads"):Promise.resolve(null);
+  return cu.then(function(d){if(!d)throw 0;return d.save({filename:"gelecek-esin.png",data:blob})}).then(function(){
+    st.innerHTML="Resim indirildi. "+link+" ve resmi tweet'e ekle.";
+  },function(){
+    st.innerHTML='Resmi basılı tutup kaydet, sonra '+link+' ve tweet\'e ekle.<br><img alt="Sonuç" style="max-width:100%;border-radius:12px;margin-top:8px" src="'+URL.createObjectURL(blob)+'">';
+  });
+}
 function render(r,existed){
   var txt="@"+r.n+" için tahminim: eşin "+r.city+" memleketli bir "+r.job+", uyum "+r.u+" 💘";
   app.innerHTML='<div class="card"><p class="c">@'+esc(r.n)+' için sonuç</p><p class="big">'+esc(r.u)+'</p><p class="c">uyum oranı</p>'+
   (existed?'<p class="c" style="font-size:.85rem">Bu kullanıcı adı için sonuç daha önce kaydedilmiş, aynısı gösteriliyor.</p>':'')+
   [["Memleket",r.city],["Meslek",r.job],["Yaş",r.yas],["Boy",r.boy],["Kilo",r.kilo],["Karakter",r.huy],["İlk buluşma",r.date],["Senin profilin",r.prof]].map(function(x){
     return '<div class="row"><b>'+x[0]+'</b><span>'+esc(String(x[1]))+'</span></div>'}).join("")+'</div>'+
-  '<button class="btn" id="cp">Sonucu kopyala</button><button class="btn ghost" id="rs">Başka kullanıcı adı dene</button>';
+  '<button class="btn" id="sh">Resim olarak paylaş</button><button class="btn ghost" id="cp">Sonucu kopyala</button><button class="btn ghost" id="rs">Başka kullanıcı adı dene</button><p class="c" id="st" style="font-size:.85rem"></p>';
   document.getElementById("rs").onclick=start;
+  document.getElementById("sh").onclick=function(){shareImg(r,txt,document.getElementById("st"))};
   document.getElementById("cp").onclick=function(){
     var b=this;
     try{navigator.clipboard.writeText(txt).then(function(){b.textContent="Kopyalandı ✓"},function(){b.textContent=txt})}catch(e){b.textContent=txt}
